@@ -1,41 +1,37 @@
 [versions]
-agp = "8.5.1"
-kotlin = "2.0.0"
+agp = "8.7.1"
+kotlin = "2.0.10"
 coreKtx = "1.13.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
-activityCompose = "1.9.1"
-composeBom = "2024.06.00"
-androidGradlePlugin = "8.5.1"
+activityCompose = "1.9.2"
+composeBom = "2024.09.03"
 # @keep
-compileSdk = "34"
-composeLatest = "1.7.0-alpha01"
-coroutines = "1.9.0-RC"
+compileSdk = "35"
+coroutines = "1.9.0"
 glide = "1.0.0-beta01"
-gradle = "7.2.0"
 gradle-versions = "0.51.0"
 gson = "2.11.0"
-hilt = "2.51.1"
+hilt = "2.52"
 hiltNavigationCompose = "1.2.0"
-kotlinxSerializationJson = "1.7.1"
-ksp = "2.0.0-1.0.23"
-ktx = "1.13.1"
-lifecycle = "2.8.4"
-material = "1.13.0-alpha04"
-material3 = "1.2.1"
-# @keep
+kotlinxSerializationJson = "1.7.3"
+ksp = "2.0.10-1.0.24"
+lifecycle = "2.8.6"
+material = "1.13.0-alpha06"
+material3 = "1.3.0"
+# @keep++++
 minSdk = "24"
-navigation = "2.8.0-beta06"
+navigation = "2.8.2"
 okhttpLogging = "4.12.0"
-pagingCompose = "3.3.1"
+pagingCompose = "3.3.2"
 retrofit = "2.11.0"
 room = "2.6.1"
 spotless = "6.25.0"
 # @keep
 targetSdk = "34"
 version-catalog-update = "0.8.4"
-viewModelCompose = "2.8.4"
-lifecycleRuntimeKtx = "2.8.4"
+viewModelCompose = "2.8.6"
+lifecycleRuntimeKtx = "2.8.6"
 
 
 
@@ -51,7 +47,7 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" , version.ref = "material3"}
 material = { group = "com.google.android.material",name="material", version.ref = "material" }
 
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle",name="lifecycle-viewmodel-compose", version.ref = "viewModelCompose" }

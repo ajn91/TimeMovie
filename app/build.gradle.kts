@@ -25,6 +25,9 @@ android {
                 arguments["dagger.hilt.disableModulesHaveInstallInCheck"] = "true"
             }
         }
+        buildConfigField ("String","API_KEY","f60ae473c8d03fdd88e75848cea96a8e")
+        buildConfigField ("String","BASE_URL","https://api.themoviedb.org/3/")
+
     }
 
     buildTypes {
@@ -50,6 +53,8 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+
     }
     packaging {
         resources {
