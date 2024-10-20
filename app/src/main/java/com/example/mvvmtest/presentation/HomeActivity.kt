@@ -6,12 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
@@ -21,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.room.util.TableInfo
 import com.example.mvvmtest.presentation.ui.theme.MvvmTestTheme
 
 class HomeActivity : ComponentActivity() {
@@ -42,8 +37,8 @@ class HomeActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Column (modifier.fillMaxSize(),Arrangement.SpaceEvenly) {
-        Button(onClick = {},modifier = modifier.align(alignment = Alignment.CenterHorizontally)) {
+    Column(modifier.fillMaxSize(), Arrangement.SpaceEvenly) {
+        Button(onClick = {}, modifier = modifier.align(alignment = Alignment.CenterHorizontally)) {
             Text("test")
 
         }
