@@ -30,7 +30,9 @@ fun MovieListScreen(
   Box(modifier = modifier.fillMaxSize()) {
     when (movieListUiState) {
       is MovieListUiState.LoadFailed -> {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.align(Alignment.Center)) {
+        Column(
+          horizontalAlignment = Alignment.CenterHorizontally,
+          modifier = Modifier.align(Alignment.Center)) {
 
           Text(
             text = movieListUiState.uiText.asString(),

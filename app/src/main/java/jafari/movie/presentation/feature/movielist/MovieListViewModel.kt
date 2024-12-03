@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -24,8 +25,8 @@ constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
   val movieListStream = moviesUseCase.getMovies()
   var updateStream = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
   var updateJob: Job? = null
-  val movieListState: StateFlow<MovieListUiState> = combine(movieListStream, updateStream)
-  { movies, result ->
+  val movieListState: StateFlow<MovieListUiState> =
+    combine(movieListStream, updateStream) { movies, result ->
     when (result) {
       is Result.Error -> {
         if (!movies.isEmpty()) {
@@ -46,13 +47,20 @@ constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
       }
 
       is Result.Loading -> {
+        if (movies.isEmpty())
         MovieListUiState.Loading
+        else{
+          MovieListUiState.Success(movies)
+        }
       }
     }
-  }.stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
+  }.onStart {
+    refreshMovieList()
+  }
+    .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
 
   init {
-    refreshMovieList()
+//    refreshMovieList()
   }
 //      .map { result ->
 //        when (result) {

@@ -86,6 +86,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.tooling.preview)
+  implementation(libs.androidx.compose.ui.tooling)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.coil.compose)
   implementation(libs.coil.network.okhttp)

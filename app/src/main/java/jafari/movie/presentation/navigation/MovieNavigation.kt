@@ -36,7 +36,7 @@ fun MovieNavigation(modifier: Modifier = Modifier) {
 
     }
     composable<Screen.Movies> {
-      MovieListScreen()
+      MovieListScreen(modifier = modifier)
     }
     composable<Screen.Movie> {
       val args = it.toRoute<Screen.Movie>()

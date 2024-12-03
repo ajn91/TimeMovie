@@ -1,5 +1,7 @@
 package jafari.movie.presentation.feature.movielist.component
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -18,17 +20,20 @@ fun MovieList(
   gridState: LazyGridState = rememberLazyGridState(),
 ) {
   LazyVerticalGrid(
-    columns = GridCells.Adaptive(128.dp),
+    columns = GridCells.Adaptive(160.dp),
     state = gridState,
+    contentPadding = PaddingValues(horizontal = 8.dp),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
     modifier = modifier,
   ) {
     items(
       items = list,
       key = { item -> item.id },
     ) { listItem ->
-      MovieListItem(
+      MovieItemCard (
         item = listItem,
-        onItemClicked = { item -> onItemClicked(item) },
+        onItemClicked = {  onItemClicked(listItem) },
       )
     }
   }
