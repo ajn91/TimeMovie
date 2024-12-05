@@ -26,7 +26,6 @@ sealed interface DataError : Error {
 fun Throwable.toDataErrorType(): DataError = when (this) {
   is IOException -> DataError.Network.NO_INTERNET
   is HttpException -> when (code()) {
-//        ErrorCodes.Http.ResourceNotFound -> ErrorType.Api.NotFound
     ErrorCodes.Http.INVALID_API_KEY -> DataError.Network.Invalid_API_key
     ErrorCodes.Http.REQUEST_TIMEOUT -> DataError.Network.REQUEST_TIMEOUT
     ErrorCodes.Http.RESOURCE_NOT_FOUND -> DataError.Network.NOT_FOUND

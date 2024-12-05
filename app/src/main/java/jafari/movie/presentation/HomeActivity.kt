@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -30,7 +31,8 @@ class HomeActivity : ComponentActivity() {
       MovieTheme {
         Scaffold(modifier = Modifier.fillMaxWidth()) { innerPadding ->
           MovieNavigation(
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(innerPadding)
+              .consumeWindowInsets(innerPadding),
           )
         }
       }
