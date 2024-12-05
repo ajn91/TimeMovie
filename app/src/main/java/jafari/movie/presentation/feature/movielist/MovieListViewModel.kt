@@ -1,9 +1,6 @@
 package jafari.movie.presentation.feature.movielist
 
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,11 +8,14 @@ import jafari.movie.domain.errors.DataError
 import jafari.movie.domain.errors.Result
 import jafari.movie.domain.usecase.movie.MovieUseCases
 import jafari.movie.presentation.ui.UiText
+import jafari.movie.presentation.ui.asErrorUiText
 import jafari.movie.presentation.ui.asUiText
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -28,19 +28,19 @@ class MovieListViewModel
 @Inject
 constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
 
-  private val movieListStream = moviesUseCase.getMovies()
-  private var updateStream = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
-  private var _errorMessage by mutableStateOf<UiText?>(null)
-  val errorMessage
-    get() = _errorMessage
-  private var updateJob: Job? = null
+  val movieListStream = moviesUseCase.getMovies()
+  var updateStream = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
+  private val _errorMessageFlow = MutableSharedFlow<UiEvent>()
+  val uiEventFlow = _errorMessageFlow.asSharedFlow()
+  var updateJob: Job? = null
 
   val movieListState: StateFlow<MovieListUiState> =
     combine(movieListStream, updateStream) { movies, result ->
       when (result) {
-        is Result.Error -> { val error = result.error.asUiText()
+        is Result.Error -> {
+          val error = result.asErrorUiText()
           if (!movies.isEmpty()) {
-            _errorMessage = error
+            _errorMessageFlow.emit(UiEvent.ShowErrorMessage(error))
             MovieListUiState.Success(movies)
           } else {
             MovieListUiState.LoadFailed(error)
@@ -94,12 +94,10 @@ constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
         refreshMovieList()
       }
 
-      MovieListEvent.ClearErrorMessage ->
-        _errorMessage = null
     }
   }
 
-  private fun refreshMovieList() {
+  fun refreshMovieList() {
     updateJob?.cancel()
     updateJob = viewModelScope.launch {
       updateStream.update {

@@ -28,28 +28,31 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jafari.movie.R
 import jafari.movie.presentation.feature.movielist.component.MovieList
-import jafari.movie.presentation.ui.UiText
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun MovieListScreen(
   movieListUiState: MovieListUiState,
-  errorMessage: UiText?,
-  clearErrorMessage: () -> Unit,
+  uiEvent: SharedFlow<UiEvent>,
   refreshClicked: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val snackbarHostState = remember { SnackbarHostState() }
 
   val context = LocalContext.current
-  LaunchedEffect(errorMessage) {
-    if (errorMessage != null) {
-      val errorString = errorMessage.asString(context)
-      snackbarHostState.showSnackbar(message = errorString)
-      clearErrorMessage()
+  LaunchedEffect(key1 = uiEvent) {
+    uiEvent.collectLatest { event ->
+      when (event) {
+        is UiEvent.ShowErrorMessage -> {
+          val errorString = event.error.asString(context)
+          snackbarHostState.showSnackbar(message = errorString)
+        }
+      }
     }
   }
   LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-    clearErrorMessage()
+    snackbarHostState.currentSnackbarData?.dismiss()
   }
 
   Scaffold(
@@ -104,9 +107,10 @@ fun MovieListScreen(
   modifier: Modifier = Modifier,
 ) {
   val movieListUiState by viewModel.movieListState.collectAsStateWithLifecycle()
-  MovieListScreen(movieListUiState,
-    viewModel.errorMessage,
-    clearErrorMessage ={viewModel.onEvent(MovieListEvent.ClearErrorMessage)} ,
-    refreshClicked = {viewModel.onEvent(MovieListEvent.RefreshClicked)},
-    modifier)
+  MovieListScreen(
+    movieListUiState,
+    viewModel.uiEventFlow,
+    refreshClicked = { viewModel.onEvent(MovieListEvent.RefreshClicked) },
+    modifier,
+  )
 }
