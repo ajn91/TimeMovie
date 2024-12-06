@@ -21,13 +21,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jafari.movie.R
+import jafari.movie.domain.models.Movie
 import jafari.movie.presentation.feature.movielist.component.MovieList
+import jafari.movie.presentation.ui.UiText
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -59,28 +63,19 @@ fun MovieListScreen(
     snackbarHost = {
       SnackbarHost(hostState = snackbarHostState)
     },
-    modifier = modifier.fillMaxSize(),
+    modifier = modifier,
   ) { contentPadding ->
-    Box(modifier = Modifier.padding(contentPadding)) {
+    Box(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(contentPadding),
+    ) {
       when (movieListUiState) {
         is MovieListUiState.LoadFailed -> {
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.align(Alignment.Center),
-          ) {
-
-            Text(
-              text = movieListUiState.uiText.asString(),
-              textAlign = TextAlign.Center,
-              modifier = Modifier.padding(bottom = 16.dp),
-            )
-            Button(onClick = { refreshClicked() }) {
-              Text(text = stringResource(R.string.refresh))
-            }
-          }
+          ErrorContainer(movieListUiState.uiText, refreshClicked)
         }
 
-        MovieListUiState.Loading -> {
+        is MovieListUiState.Loading -> {
           CircularProgressIndicator(
             modifier =
             Modifier
@@ -92,12 +87,29 @@ fun MovieListScreen(
         }
 
         is MovieListUiState.Success -> {
-          MovieList(list = movieListUiState.movieList, onItemClicked = {})
+          MovieList(list = movieListUiState.movieList, onItemClicked = {}, Modifier.fillMaxSize())
         }
 
       }
     }
 
+  }
+}
+
+@Composable
+fun ErrorContainer(errorText: UiText, refreshClicked: () -> Unit) {
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+
+    Text(
+      text = errorText.asString(),
+      textAlign = TextAlign.Center,
+      modifier = Modifier.padding(bottom = 16.dp),
+    )
+    Button(onClick = { refreshClicked() }) {
+      Text(text = stringResource(R.string.refresh))
+    }
   }
 }
 
@@ -112,5 +124,26 @@ fun MovieListScreen(
     viewModel.uiEventFlow,
     refreshClicked = { viewModel.onEvent(MovieListEvent.RefreshClicked) },
     modifier,
+  )
+}
+
+@Preview
+@Composable
+fun MovieListScreen() {
+  val movies = List(10) { index ->
+    Movie(
+      id = index,
+      overview = "This is a overview for movie$index",
+      posterUrl = "https://image.tmdb.org/t/p/w500/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+      releaseDate = "$index/$index/$index",
+      title = "Title $index",
+    )
+
+  }
+  MovieListScreen(
+    MovieListUiState.Success(movies),
+    MutableSharedFlow<UiEvent>(),
+    refreshClicked = { },
+    Modifier.fillMaxSize(),
   )
 }
