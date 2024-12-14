@@ -43,7 +43,7 @@ fun DataError.asUiText(): UiText {
       R.string.not_found
     )
 
-    DataError.Network.Invalid_API_key -> UiText.StringResource(
+    DataError.Network.INVALID_API_KEY -> UiText.StringResource(
       R.string.invalid_api_key
     )
 

@@ -2,7 +2,6 @@ package jafari.movie.presentation.feature.movielist.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -13,9 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import jafari.movie.domain.models.Movie
-import jafari.movie.presentation.feature.movielist.MovieListUiState
-import jafari.movie.presentation.feature.movielist.UiEvent
-import kotlinx.coroutines.flow.MutableSharedFlow
 
 @Composable
 fun MovieList(
@@ -36,13 +32,14 @@ fun MovieList(
       items = list,
       key = { item -> item.id },
     ) { listItem ->
-      MovieItemCard (
+      MovieItemCard(
         item = listItem,
-        onItemClicked = {  onItemClicked(listItem) },
+        onItemClicked = { onItemClicked(listItem) },
       )
     }
   }
 }
+
 @Preview
 @Composable
 fun MovieList() {
@@ -57,7 +54,7 @@ fun MovieList() {
 
   }
   MovieList(
-   movies,
-    onItemClicked = {}
+    movies,
+    onItemClicked = {},
   )
 }

@@ -6,7 +6,7 @@ import java.io.IOException
 sealed interface DataError : Error {
   enum class Network : DataError {
     REQUEST_TIMEOUT,
-    Invalid_API_key,
+    INVALID_API_KEY,
     NOT_FOUND,
     TOO_MANY_REQUESTS,
     NO_INTERNET,
@@ -24,9 +24,10 @@ sealed interface DataError : Error {
 
 
 fun Throwable.toDataErrorType(): DataError = when (this) {
+
   is IOException -> DataError.Network.NO_INTERNET
   is HttpException -> when (code()) {
-    ErrorCodes.Http.INVALID_API_KEY -> DataError.Network.Invalid_API_key
+    ErrorCodes.Http.INVALID_API_KEY -> DataError.Network.INVALID_API_KEY
     ErrorCodes.Http.REQUEST_TIMEOUT -> DataError.Network.REQUEST_TIMEOUT
     ErrorCodes.Http.RESOURCE_NOT_FOUND -> DataError.Network.NOT_FOUND
     ErrorCodes.Http.INTERNAL_SERVER -> DataError.Network.SERVER_ERROR
