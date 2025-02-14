@@ -35,33 +35,33 @@ This project is built using a combination of **MVI (Model-View-Intent)** and **M
 4. Run the app on an emulator or a physical device.
 
 ## Folder Structure
-
-app/src/main/java/jafari/movie/
-├── Application.kt
-├── data/
-│   ├── di/
-│   ├── local/
-│   ├── mapper/
-│   ├── network/
-│   └── repository/
-├── di/
-│   ├── AppDispatchers.kt
-│   ├── CoroutineScopesModule.kt
-│   └── DispatchersModule.kt
-├── domain/
-│   ├── errors/
-│   ├── models/
-│   ├── repository/
-│   └── usecase/
-├── presentation/
-│   ├── HomeActivity.kt
-│   ├── components/
-│   ├── feature/
-│   ├── navigation/
-│   └── ui/
-└── utilities/
-    └── Constants.kt
-
+  ```
+ app/src/main/java/jafari/movie/
+ ├── Application.kt
+ ├── data/
+ │   ├── di/
+ │   ├── local/
+ │   ├── mapper/
+ │   ├── network/
+ │   └── repository/
+ ├── di/
+ │   ├── AppDispatchers.kt
+ │   ├── CoroutineScopesModule.kt
+ │   └── DispatchersModule.kt
+ ├── domain/
+ │   ├── errors/
+ │   ├── models/
+ │   ├── repository/
+ │   └── usecase/
+ ├── presentation/
+ │   ├── HomeActivity.kt
+ │   ├── components/
+ │   ├── feature/
+ │   ├── navigation/
+ │   └── ui/
+ └── utilities/
+     └── Constants.kt
+```
 - `Application.kt`: The main application file.
 - `data/`: Handles data sources (API and database).
   - `di/`: Dependency injection setup for data layer.
@@ -87,11 +87,3 @@ app/src/main/java/jafari/movie/
 - `utilities/`: Utility classes and helper functions.
   - `Constants.kt`: Constants used across the application.
 
-## Contributing
-Contributions are welcome! Please read the [contributing guidelines](https://github.com/ajn91/TimeMovie/blob/main/CONTRIBUTING.md) first.
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/ajn91/TimeMovie/blob/main/LICENSE) file for details.
-
-## Project URL
-[GitHub Repository](https://github.com/ajn91/TimeMovie)
