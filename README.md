@@ -24,4 +24,26 @@ This project is built using a combination of **MVI (Model-View-Intent)** and **M
 ### Prerequisites  
 - Android Studio (latest version recommended).  
 - Minimum SDK: 21  
-- Target SDK: 33  
+- Target SDK: 33
+
+### Installation  
+1. Clone the repository:  
+   ```bash
+   git clone https://github.com/ajn91/TimeMovie.git
+2. Open the project in Android Studio.
+3. Sync the project with Gradle.
+4. Run the app on an emulator or a physical device.
+   
+## Folder Structure
+- data/            # Handles data sources (API and database)  
+  - api/           # Retrofit service interfaces  
+  - db/            # Room database and DAOs  
+  - model/         # Data models  
+  - repository/    # Repository pattern for data operations  
+
+- ui/              # UI components built with Jetpack Compose  
+  - list/          # Movie list screen  
+  - details/       # Movie details screen  
+
+- di/              # Hilt dependency injection setup  
+- utils/           # Utility classes and helper functions  
