@@ -7,9 +7,9 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class RefreshMoviesUseCase
-  @Inject
-  constructor(val movieRepository: MovieRepository) {
-     operator suspend fun invoke(): Result<Unit, DataError>{
-    return  movieRepository.refreshMovies()
+@Inject
+constructor(val movieRepository: MovieRepository) {
+    operator suspend fun invoke(): Result<Unit, DataError> {
+        return movieRepository.refreshMovies()
     }
-  }
+}

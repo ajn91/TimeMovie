@@ -1,16 +1,15 @@
 package jafari.movie.presentation.feature.movielist
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jafari.movie.domain.errors.DataError
 import jafari.movie.domain.errors.Result
 import jafari.movie.domain.usecase.movie.MovieUseCases
-import jafari.movie.presentation.ui.UiText
 import jafari.movie.presentation.ui.asErrorUiText
 import jafari.movie.presentation.ui.asUiText
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,11 +27,11 @@ class MovieListViewModel
 @Inject
 constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
 
-  val movieListStream = moviesUseCase.getMovies()
-  var updateStream = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
+  private  val movieListStream = moviesUseCase.getMovies()
+  private var updateStream = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
   private val _errorMessageFlow = MutableSharedFlow<UiEvent>()
   val uiEventFlow = _errorMessageFlow.asSharedFlow()
-  var updateJob: Job? = null
+  private var updateJob: Job? = null
 
   val movieListState: StateFlow<MovieListUiState> =
     combine(movieListStream, updateStream) { movies, result ->
@@ -66,9 +65,8 @@ constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
       }
     }.onStart {
       refreshMovieList()
-      Log.d("LOG", "refresh")
-    }
-      .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
+    }.stateIn(viewModelScope,
+      started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
 
   init {
 //    refreshMovieList()
@@ -88,9 +86,9 @@ constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
 //      .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
 
 
-  fun onEvent(event: MovieListEvent) {
+  fun onEvent(event: MovieListAction) {
     when (event) {
-      MovieListEvent.RefreshClicked -> {
+      MovieListAction.RefreshClicked -> {
         refreshMovieList()
       }
 
@@ -100,12 +98,12 @@ constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
   fun refreshMovieList() {
     updateJob?.cancel()
     updateJob = viewModelScope.launch {
+      ensureActive()
       updateStream.update {
+        updateStream
         moviesUseCase.refreshMovies()
       }
-
     }
-
   }
 
 //  fun getMovies() {
