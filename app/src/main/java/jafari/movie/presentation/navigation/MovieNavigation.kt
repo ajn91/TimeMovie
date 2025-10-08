@@ -2,6 +2,7 @@ package jafari.movie.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -23,8 +24,8 @@ object Screen {
 
 
 @Composable
-fun MovieNavigation(modifier: Modifier = Modifier) {
-  val navController = rememberNavController()
+fun MovieNavigation(modifier: Modifier = Modifier,navController: NavHostController = rememberNavController()) {
+
   NavHost(
     navController = navController,
     startDestination = Screen.Start,

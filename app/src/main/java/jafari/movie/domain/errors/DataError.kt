@@ -1,5 +1,9 @@
 package jafari.movie.domain.errors
 
+import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.request.request
+import jafari.movie.data.network.adapter.NetworkResponse
 import retrofit2.HttpException
 import java.io.IOException
 
@@ -33,6 +37,7 @@ fun Throwable.toDataErrorType(): DataError = when (this) {
     ErrorCodes.Http.INTERNAL_SERVER -> DataError.Network.SERVER_ERROR
     ErrorCodes.Http.SERVICE_UNAVAILABLE -> DataError.Network.SERVICE_UNAVAILABLE
     else -> DataError.Network.UNKNOWN
+
   }
 
   else -> DataError.Network.UNKNOWN

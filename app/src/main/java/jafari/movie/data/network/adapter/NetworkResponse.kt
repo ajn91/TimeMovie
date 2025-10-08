@@ -1,4 +1,4 @@
-package io.filmtime.data.network.adapter
+package jafari.movie.data.network.adapter
 
 import java.io.IOException
 

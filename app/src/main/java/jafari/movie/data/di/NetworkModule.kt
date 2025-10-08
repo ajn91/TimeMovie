@@ -1,125 +1,106 @@
 package jafari.movie.data.di
 
-
 import AuthInterceptorOkHttpClient
+import android.util.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import io.filmtime.data.network.adapter.NetworkCallAdapterFactory
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.header
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
 import jafari.movie.BuildConfig
-import jafari.movie.data.network.TMDBService
 import kotlinx.serialization.json.Json
-import okhttp3.Call
 import okhttp3.Interceptor
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.CallAdapter
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 internal object NetworkModule {
 
-//  private const val INTERCEPTOR_LOGGING_NAME = "INTERCEPTOR_LOGGING"
-//  private const val INTERCEPTOR_HEADER_NAME = "INTERCEPTOR_HEADER"
-
-  @Provides
-  @Singleton
-  fun providesJson(): Json {
-    return Json {
-      ignoreUnknownKeys = true
+    @Provides
+    @Singleton
+    fun providesJson(): Json {
+        return Json {
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+        }
     }
-  }
 
-  //  @Provides
-//  @Named(INTERCEPTOR_LOGGING_NAME)
-//  fun provideHttpLoggingInterceptor(): Interceptor =
-//    if (BuildConfig.DEBUG) {
-//      HttpLoggingInterceptor().apply {
-//        level = HttpLoggingInterceptor.Level.BODY
-//      }
-//    } else {
-//      noOpInterceptor()
-//    }
-  @Provides
-  @Singleton
-  fun okHttpCallFactory(
-    @AuthInterceptorOkHttpClient
-    headerInterceptor: Interceptor,
-  ): Call.Factory =
-    OkHttpClient.Builder()
-      .addInterceptor(
-        HttpLoggingInterceptor()
-          .apply {
-            if (BuildConfig.DEBUG) {
-              setLevel(HttpLoggingInterceptor.Level.BODY)
+    @Provides
+    @Singleton
+    fun provideKtorClient(json: Json): HttpClient {
+        return HttpClient(CIO) {
+            // Logging
+            install(Logging) {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        Log.v("KtorLogger", message)
+                    }
+                }
+                level = LogLevel.ALL
             }
-          },
-      )
-      .addInterceptor(headerInterceptor)
 
-      .build()
+            // JSON Serialization
+            install(ContentNegotiation) {
+                json(json)
+            }
 
-//  @Provides
-//  @Singleton
-//  fun provideOkhttpClient(
-//    @Named(INTERCEPTOR_LOGGING_NAME) loggingInterceptor: Interceptor,
-//    @Named(INTERCEPTOR_HEADER_NAME) headerInterceptor: Interceptor,
-//  ): OkHttpClient {
-//    return OkHttpClient
-//      .Builder()
-//      .connectTimeout(NETWORK_REQUEST_TIMEOUT, TimeUnit.SECONDS)
-//      .readTimeout(NETWORK_REQUEST_READ_TIME, TimeUnit.SECONDS)
-//      .addInterceptor(headerInterceptor)
-//      .addInterceptor(loggingInterceptor)
-//      .build()
-//  }
+            // Timeout
+            install(HttpTimeout) {
+                requestTimeoutMillis = 15_000L
+                connectTimeoutMillis = 15_000L
+                socketTimeoutMillis = 15_000L
+            }
 
-  @Singleton
-  @Provides
-  fun provideRetrofit(
-    okhttpCallFactory: dagger.Lazy<Call.Factory>,
-    json: Json,
-  ): Retrofit {
-    return Retrofit.Builder()
-      .baseUrl(BuildConfig.BASE_URL)
-      // We use callFactory lambda here with dagger.Lazy<Call.Factory>
-      // to prevent initializing OkHttp on the main thread.
-      .callFactory { okhttpCallFactory.get().newCall(it) }
-      .addConverterFactory(json.asConverterFactory("application/json".toMediaType())).build()
-  }
+            // Default request configuration
+            defaultRequest {
+                url(BuildConfig.BASE_URL)
+                header("Authorization", "Bearer ${BuildConfig.API_TOKEN}")
+                contentType(ContentType.Application.Json)
+            }
+        }
+    }
 
-//  @Provides
-//  @Singleton
-//  fun providesNetworkCallAdapterFactory(): CallAdapter.Factory {
-//    return NetworkCallAdapterFactory()
-//  }
+    // --- Keeping Retrofit setup for incremental migration (commented out) ---
 
-  @Singleton
-  @Provides
-  fun provideTMDBService(retrofit: Retrofit): TMDBService {
-    return retrofit.create(TMDBService::class.java)
-  }
-
-//  private fun noOpInterceptor(): Interceptor =
-//    Interceptor { chain ->
-//      chain.proceed(chain.request())
+//    @Singleton
+//    @Provides
+//    fun provideRetrofit(
+//        okhttpCallFactory: dagger.Lazy<Call.Factory>,
+//        json: Json,
+//    ): Retrofit {
+//        return Retrofit.Builder()
+//            .baseUrl(BuildConfig.BASE_URL)
+//            .callFactory { okhttpCallFactory.get().newCall(it) }
+//            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+//            .build()
 //    }
 
-  @Provides
-  @Singleton
-  @AuthInterceptorOkHttpClient
-  fun headerInterceptor(): Interceptor =
-    Interceptor { chain ->
-      val newRequest =
-        chain.request().newBuilder()
-          .addHeader("Authorization", "Bearer ${BuildConfig.API_TOKEN}")
-          .build()
-      chain.proceed(newRequest)
-    }
+//    @Singleton
+//    @Provides
+//    fun provideTMDBService(retrofit: Retrofit): TMDBService {
+//        return retrofit.create(TMDBService::class.java)
+//    }
+    
+//    @Provides
+//    @Singleton
+//    @AuthInterceptorOkHttpClient
+//    fun headerInterceptor(): Interceptor = 
+//        Interceptor { chain ->
+//            val newRequest =
+//                chain.request().newBuilder()
+//                    .addHeader("Authorization", "Bearer ${BuildConfig.API_TOKEN}")
+//                    .build()
+//            chain.proceed(newRequest)
+//        }
 }
-

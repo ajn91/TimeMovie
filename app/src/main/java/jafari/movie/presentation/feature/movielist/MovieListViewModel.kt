@@ -81,8 +81,7 @@ constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
 //          is Result.Success -> {
 //            MovieListUiState.Success(result.data)
 //          }
-//        }
-//      }
+//      }//        }
 //      .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
 
 

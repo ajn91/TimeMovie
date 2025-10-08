@@ -38,18 +38,18 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
   }
-  kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_11.toString()
-
-    // Enable Coroutines and Flow APIs
-    freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-    freeCompilerArgs = freeCompilerArgs + "-Xopt-in=kotlinx.coroutines.FlowPreview"
+kotlin {
+  compilerOptions {
+    freeCompilerArgs.addAll(
+      "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+      "-Xopt-in=kotlinx.coroutines.FlowPreview"
+    )
   }
+}
   buildFeatures {
-    compose = true
     buildConfig = true
   }
   packaging {
@@ -77,8 +77,15 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.hilt.android)
   implementation(libs.hilt.navigation.compose)
-  implementation(libs.androidx.work.runrime)
+  implementation(libs.androidx.work.runtime.ktx)
   implementation(libs.androidx.core.splashscreen)
+
+  // Ktor
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.logging)
 
 
   // Compose
@@ -92,4 +99,5 @@ dependencies {
   implementation(libs.coil.compose)
   implementation(libs.coil.network.okhttp)
   implementation(libs.androidx.material3)
+  implementation(libs.androidx.compose.material.icons.extended)
 }
