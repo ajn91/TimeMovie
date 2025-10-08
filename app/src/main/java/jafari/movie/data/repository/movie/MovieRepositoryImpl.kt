@@ -10,6 +10,7 @@ import jafari.movie.di.AppDispatchers.IO
 import jafari.movie.di.Dispatcher
 import jafari.movie.domain.errors.DataError
 import jafari.movie.domain.errors.Result
+import jafari.movie.domain.errors.toDataError
 import jafari.movie.domain.models.Movie
 import jafari.movie.domain.repository.MovieRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -42,9 +43,9 @@ class MovieRepositoryImpl
                 }
                 Result.Success(Unit)
             }
-            is NetworkResponse.ApiError -> Result.Error(DataError.Network.UNKNOWN) // Or map the specific error
-            is NetworkResponse.NetworkError -> Result.Error(DataError.Network.NO_INTERNET)
-            is NetworkResponse.UnknownError -> Result.Error(DataError.Network.UNKNOWN)
+            is NetworkResponse.Error -> {
+                Result.Error(movieResult.toDataError())
+            }
         }
     }
   }

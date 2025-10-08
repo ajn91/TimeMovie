@@ -8,27 +8,22 @@ import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.request
 import jafari.movie.data.network.adapter.NetworkResponse
-import jafari.movie.domain.errors.toDataErrorType
 import java.io.IOException
 
 suspend inline fun <reified S : Any, reified E : Any> HttpClient.safeRequest(
     block: HttpRequestBuilder.() -> Unit,
-): NetworkResponse<S, E> =
+): NetworkResponse<S, E> = 
     try {
         val response = request { block() }
         NetworkResponse.Success(response.body())
     } catch (e: ClientRequestException) {
-        NetworkResponse.ApiError(e.response.body(), e.response.status.value)
+        NetworkResponse.Error.ClientError(e.response.body(), e.response.status.value)
     } catch (e: ServerResponseException) {
-        NetworkResponse.ApiError(e.response.body(), e.response.status.value)
+        NetworkResponse.Error.ServerError(e.response.body(), e.response.status.value)
     } catch (e: RedirectResponseException) {
-        NetworkResponse.UnknownError(e)
+        NetworkResponse.Error.RedirectError(e.response.body(), e.response.status.value)
     } catch (e: IOException) {
-        NetworkResponse.NetworkError(e)
+        NetworkResponse.Error.NetworkError(e)
     } catch (e: Exception) {
-        NetworkResponse.UnknownError(e)
-    } catch (throwable: Throwable){
-        throwable.toDataErrorType()
+        NetworkResponse.Error.UnknownError(e)
     }
-)
-

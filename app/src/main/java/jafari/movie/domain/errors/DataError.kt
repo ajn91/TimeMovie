@@ -1,46 +1,59 @@
 package jafari.movie.domain.errors
 
-import io.ktor.client.call.body
-import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.request.request
 import jafari.movie.data.network.adapter.NetworkResponse
 import retrofit2.HttpException
 import java.io.IOException
 
 sealed interface DataError : Error {
-  enum class Network : DataError {
-    REQUEST_TIMEOUT,
-    INVALID_API_KEY,
-    NOT_FOUND,
-    TOO_MANY_REQUESTS,
-    NO_INTERNET,
-    SERVER_ERROR,
-    SERVICE_UNAVAILABLE,
-    SERIALIZATION,
-    UNKNOWN
+  sealed interface Network : DataError {
+    data object RequestTimeout : Network
+    data object InvalidApiKey : Network
+    data object NotFound : Network
+    data object TooManyRequests : Network
+    data object NoInternet : Network
+    data object ServerError : Network
+    data object ServiceUnavailable : Network
+    data object Serialization : Network
+    data object Unknown : Network
   }
 
-  enum class Local : DataError {
-    DISK_FULL,
-    EMPTY_LIST
+  sealed interface Local : DataError {
+    data object DiskFull : Local
+    data object EmptyList : Local
   }
 }
 
+fun NetworkResponse.Error<*>.toDataError(): DataError.Network = when (this) {
+    is NetworkResponse.Error.ClientError -> when (code) {
+        ErrorCodes.Http.INVALID_API_KEY -> DataError.Network.InvalidApiKey
+        ErrorCodes.Http.RESOURCE_NOT_FOUND -> DataError.Network.NotFound
+        ErrorCodes.Http.REQUEST_TIMEOUT -> DataError.Network.RequestTimeout
+        else -> DataError.Network.Unknown
+    }
+    is NetworkResponse.Error.ServerError -> when (code) {
+        ErrorCodes.Http.SERVICE_UNAVAILABLE -> DataError.Network.ServiceUnavailable
+        else -> DataError.Network.ServerError
+    }
+    is NetworkResponse.Error.RedirectError -> DataError.Network.Unknown
+    is NetworkResponse.Error.NetworkError -> DataError.Network.NoInternet
+    is NetworkResponse.Error.UnknownError -> DataError.Network.Unknown
+    is NetworkResponse.Error.HttpError -> DataError.Network.Unknown // Fallback
+}
 
 fun Throwable.toDataErrorType(): DataError = when (this) {
 
-  is IOException -> DataError.Network.NO_INTERNET
+  is IOException -> DataError.Network.NoInternet
   is HttpException -> when (code()) {
-    ErrorCodes.Http.INVALID_API_KEY -> DataError.Network.INVALID_API_KEY
-    ErrorCodes.Http.REQUEST_TIMEOUT -> DataError.Network.REQUEST_TIMEOUT
-    ErrorCodes.Http.RESOURCE_NOT_FOUND -> DataError.Network.NOT_FOUND
-    ErrorCodes.Http.INTERNAL_SERVER -> DataError.Network.SERVER_ERROR
-    ErrorCodes.Http.SERVICE_UNAVAILABLE -> DataError.Network.SERVICE_UNAVAILABLE
-    else -> DataError.Network.UNKNOWN
+    ErrorCodes.Http.INVALID_API_KEY -> DataError.Network.InvalidApiKey
+    ErrorCodes.Http.REQUEST_TIMEOUT -> DataError.Network.RequestTimeout
+    ErrorCodes.Http.RESOURCE_NOT_FOUND -> DataError.Network.NotFound
+    ErrorCodes.Http.INTERNAL_SERVER -> DataError.Network.ServerError
+    ErrorCodes.Http.SERVICE_UNAVAILABLE -> DataError.Network.ServiceUnavailable
+    else -> DataError.Network.Unknown
 
   }
 
-  else -> DataError.Network.UNKNOWN
+  else -> DataError.Network.Unknown
 }
 
 object ErrorCodes {

@@ -5,156 +5,70 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jafari.movie.domain.errors.DataError
 import jafari.movie.domain.errors.Result
+import jafari.movie.domain.models.Movie
 import jafari.movie.domain.usecase.movie.MovieUseCases
 import jafari.movie.presentation.ui.asErrorUiText
-import jafari.movie.presentation.ui.asUiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class MovieListViewModel
 @Inject
-constructor(val moviesUseCase: MovieUseCases) : ViewModel() {
+constructor(private val moviesUseCase: MovieUseCases) : ViewModel() {
 
-  private  val movieListStream = moviesUseCase.getMovies()
-  private var updateStream = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
-  private val _errorMessageFlow = MutableSharedFlow<UiEvent>()
-  val uiEventFlow = _errorMessageFlow.asSharedFlow()
-  private var updateJob: Job? = null
+    private val _refreshState = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
+    private var refreshJob: Job? = null
 
-  val movieListState: StateFlow<MovieListUiState> =
-    combine(movieListStream, updateStream) { movies, result ->
-      when (result) {
-        is Result.Error -> {
-          val error = result.asErrorUiText()
-          if (!movies.isEmpty()) {
-            _errorMessageFlow.emit(UiEvent.ShowErrorMessage(error))
-            MovieListUiState.Success(movies)
-          } else {
-            MovieListUiState.LoadFailed(error)
-          }
+    private val movies: StateFlow<List<Movie>> = moviesUseCase.getMovies()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+
+    val movieListState: StateFlow<MovieListUiState> =
+        combine(movies, _refreshState) { movies, refreshResult ->
+            val isRefreshing = refreshResult is Result.Loading
+
+            if (movies.isEmpty()) {
+                when (refreshResult) {
+                    is Result.Error -> MovieListUiState.LoadFailed(refreshResult.asErrorUiText())
+                    is Result.Loading -> MovieListUiState.Loading
+                    is Result.Success -> MovieListUiState.Empty
+                }
+            } else {
+                MovieListUiState.Success(
+                    movieList = movies,
+                    isRefreshing = isRefreshing,
+                    error = (refreshResult as? Result.Error)?.asErrorUiText()
+                )
+            }
         }
+        .onStart { refreshMovieList() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = MovieListUiState.Loading
+        )
 
-        is Result.Success -> {
-          if (!movies.isEmpty()) {
-            MovieListUiState.Success(movies)
-          } else {
-            MovieListUiState.LoadFailed(DataError.Local.EMPTY_LIST.asUiText())
 
-          }
+    fun onEvent(event: MovieListAction) {
+        when (event) {
+            MovieListAction.RefreshClicked -> refreshMovieList()
         }
-
-        is Result.Loading -> {
-          if (movies.isEmpty())
-            MovieListUiState.Loading
-          else {
-            MovieListUiState.Success(movies)
-          }
-        }
-      }
-    }.onStart {
-      refreshMovieList()
-    }.stateIn(viewModelScope,
-      started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
-
-  init {
-//    refreshMovieList()
-  }
-//      .map { result ->
-//        when (result) {
-//          is Result.Error -> {
-//            val error = result.error.asUiText()
-//            MovieListUiState.LoadFailed(error)
-//          }
-//
-//          is Result.Success -> {
-//            MovieListUiState.Success(result.data)
-//          }
-//      }//        }
-//      .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(5_000), MovieListUiState.Loading)
-
-
-  fun onEvent(event: MovieListAction) {
-    when (event) {
-      MovieListAction.RefreshClicked -> {
-        refreshMovieList()
-      }
-
     }
-  }
 
-  fun refreshMovieList() {
-    updateJob?.cancel()
-    updateJob = viewModelScope.launch {
-      ensureActive()
-      updateStream.update {
-        updateStream
-        moviesUseCase.refreshMovies()
-      }
+    private fun refreshMovieList() {
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
+            _refreshState.value = Result.Loading
+            ensureActive()
+            _refreshState.value = moviesUseCase.refreshMovies()
+        }
     }
-  }
-
-//  fun getMovies() {
-//    viewModelScope.launch {
-//      moviesUseCase.getMovies()
-//        .onStart {
-//          movieListState.update { state ->
-//            state.copy(isLoading = true)
-//          }
-//        }
-//        .onCompletion {
-//          movieListState.update { state ->
-//            state.copy(isLoading = false)
-//          }
-//        }
-//        .onEach { result ->
-//          if (result is Result.Success) {
-//            movieListState.update { state ->
-//              state.copy(isLoading = false, movieList = result.successValue(), isError = false)
-//            }
-//          }
-//        }.catch { cause ->
-//          if (cause is GeneralErrorThrowable) {
-//            when (cause.generalError) {
-//
-//              is GeneralError.ApiError -> {
-//                movieListState.update { state ->
-//                  state.copy(isError = true, errorMessage = cause.generalError.message ?: "error")
-//                }
-//              }
-//
-//              GeneralError.NetworkError -> {
-//                movieListState.update { state ->
-//                  state.copy(isError = true, errorMessage = "error")
-//                }
-//              }
-//
-//              is GeneralError.UnknownError -> {
-//                movieListState.update { state ->
-//                  state.copy(isError = true, errorMessage = "error")
-//                }
-//              }
-//            }
-//          } else {
-//            movieListState.update { state ->
-//              state.copy(isError = true, errorMessage = "unknown")
-//            }
-//          }
-//        }
-//        .collect()
-//    }
-//  }
-
-
 }
