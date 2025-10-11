@@ -1,5 +1,7 @@
 package jafari.movie.data.di
 
+import com.tamin.taminhamrah.di.interceptor.NetworkInterceptor
+import com.tamin.taminhamrah.di.interceptor.RequestInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -68,6 +70,10 @@ internal object NetworkModule {
             engine {
                 // You can configure OkHttp specific features here
                 // For example, add an interceptor for advanced logging or caching
+                config {
+                    addInterceptor(NetworkInterceptor())
+                    addInterceptor(RequestInterceptor())
+                }
             }
         }
     }

@@ -2,57 +2,57 @@ package jafari.movie.presentation.ui
 
 
 import jafari.movie.R
-import jafari.movie.domain.errors.DataError
+import jafari.movie.domain.errors.DomainError
 import jafari.movie.domain.errors.Result
 
-fun DataError.asUiText(): UiText {
+fun DomainError.asUiText(): UiText {
   return when (this) {
-    DataError.Network.REQUEST_TIMEOUT -> UiText.StringResource(
+    DomainError.Network.RequestTimeout -> UiText.StringResource(
       R.string.the_request_timed_out
     )
 
-    DataError.Network.TOO_MANY_REQUESTS -> UiText.StringResource(
+    DomainError.Network.TooManyRequests -> UiText.StringResource(
       R.string.youve_hit_your_rate_limit
     )
 
-    DataError.Network.NO_INTERNET -> UiText.StringResource(
+    DomainError.Network.NoInternet -> UiText.StringResource(
       R.string.no_internet
     )
 
-    DataError.Network.SERVER_ERROR -> UiText.StringResource(
+    DomainError.Network.ServerError -> UiText.StringResource(
       R.string.server_error
     )
 
-    DataError.Network.SERIALIZATION -> UiText.StringResource(
+    DomainError.Network.Serialization -> UiText.StringResource(
       R.string.error_serialization
     )
 
-    DataError.Network.UNKNOWN -> UiText.StringResource(
+    DomainError.Network.Unknown -> UiText.StringResource(
       R.string.unknown_error
     )
 
-    DataError.Local.DISK_FULL -> UiText.StringResource(
+    DomainError.Local.DiskFull -> UiText.StringResource(
       R.string.error_disk_full
     )
 
-    DataError.Network.SERVICE_UNAVAILABLE -> UiText.StringResource(
+    DomainError.Network.ServiceUnavailable -> UiText.StringResource(
       R.string.server_error
     )
 
-    DataError.Network.NOT_FOUND -> UiText.StringResource(
+    DomainError.Network.NotFound -> UiText.StringResource(
       R.string.not_found
     )
 
-    DataError.Network.INVALID_API_KEY -> UiText.StringResource(
+    DomainError.Network.InvalidApiKey -> UiText.StringResource(
       R.string.invalid_api_key
     )
 
-    DataError.Local.EMPTY_LIST -> UiText.StringResource(
+    DomainError.Local.EmptyList -> UiText.StringResource(
       R.string.empty_list
     )
   }
 }
 
-fun Result.Error<*, DataError>.asErrorUiText(): UiText {
+fun Result.Error<*, DomainError>.asErrorUiText(): UiText {
   return error.asUiText()
 }

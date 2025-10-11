@@ -3,7 +3,7 @@ agp = "8.13.0"
 kotlin = "2.2.20"
 coreKtx = "1.17.0"
 activityCompose = "1.11.0"
-composeBom = "2025.09.01"
+composeBom = "2025.10.00"
 # @keep
 compileSdk = "36"
 coroutines = "1.10.2"
@@ -15,25 +15,26 @@ lifecycle = "2.9.4"
 material = "1.13.0"
 material3 = "1.4.0"
 materialIconsExtended = "1.7.8"
-ktor = "3.3.0"
+ktor = "3.3.1"
 # @keep++++
 minSdk = "24"
 navigation = "2.9.5"
-okhttpLogging = "4.12.0"
+okhttpLogging = "5.2.1"
 paging = "3.3.6"
-retrofit = "2.11.0"
-room = "2.8.1"
+retrofit = "3.0.0"
+room = "2.8.2"
 spotless = "8.0.0"
 # @keep
 #noinspection OldTargetApi
-targetSdk = "35"
+targetSdk = "36"
 viewModelCompose = "2.9.4"
 work ="2.10.5"
-coilCompose = "3.0.0-rc02"
+coilCompose = "3.3.0"
 androidxCoreSplashscreen = "1.0.1"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
+timber = "5.0.1"
 
 
 
@@ -73,6 +74,7 @@ androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscree
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }

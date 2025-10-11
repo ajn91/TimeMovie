@@ -1,6 +1,5 @@
 package jafari.movie.presentation.feature.movielist
 
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +14,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,112 +31,191 @@ import jafari.movie.R
 import jafari.movie.domain.models.Movie
 import jafari.movie.presentation.feature.movielist.component.MovieList
 import jafari.movie.presentation.ui.UiText
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun MovieListScreen(
-  modifier: Modifier = Modifier,
-  viewModel: MovieListViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier,
+    viewModel: MovieListViewModel = hiltViewModel(),
 ) {
-  val movieListUiState by viewModel.movieListState.collectAsStateWithLifecycle()
-  MovieListScreen(
-    movieListUiState = movieListUiState,
-    onRefreshClicked = { viewModel.onEvent(MovieListAction.RefreshClicked) },
-    modifier = modifier,
-  )
+    val movieListUiState by viewModel.movieListState.collectAsStateWithLifecycle()
+    val snackBarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collectLatest { event ->
+            when (event) {
+                is MovieListEvent.ShowSnackBar -> {
+                    snackBarHostState.showSnackbar(
+                        message = event.message.asString(context)
+                    )
+                }
+            }
+        }
+    }
+
+    MovieListScreenContent(
+        movieListUiState = movieListUiState,
+        snackBarHostState = snackBarHostState,
+        onRefreshClicked = { viewModel.onEvent(MovieListAction.RefreshClicked) },
+        modifier = modifier,
+    )
 }
 
 @Composable
-internal fun MovieListScreen(
-  movieListUiState: MovieListUiState,
-  onRefreshClicked: () -> Unit,
-  modifier: Modifier = Modifier,
+internal fun MovieListScreenContent(
+    movieListUiState: MovieListUiState,
+    snackBarHostState: SnackbarHostState,
+    onRefreshClicked: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-  val snackBarHostState = remember { SnackbarHostState() }
-  val context = LocalContext.current
-
-  // Show snackBar for errors that occur during a background refresh
-  val error = movieListUiState.error
-  LaunchedEffect(error) {
-    if (movieListUiState is MovieListUiState.Success && error != null) {
-      val errorString = error.asString(context)
-      snackBarHostState.showSnackbar(message = errorString)
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        snackBarHostState.currentSnackbarData?.dismiss()
     }
-  }
 
-  SideEffect {
-    Log.d("LOG", "MovieListScreen: recomposing")
-  }
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
+        modifier = modifier,
+    ) { contentPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            when (movieListUiState) {
+                is MovieListUiState.LoadFailed -> {
+                    ErrorContainer(
+                        errorText = movieListUiState.error,
+                        onRefreshClicked = onRefreshClicked
+                    )
+                }
 
-  LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-    snackBarHostState.currentSnackbarData?.dismiss()
-  }
+                is MovieListUiState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.width(64.dp),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
 
-  Scaffold(
-    snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-    modifier = modifier,
-  ) { contentPadding ->
-    Box(
-      modifier = Modifier
-        .fillMaxSize()
-        .padding(contentPadding),
-      contentAlignment = Alignment.Center
+                is MovieListUiState.Success -> {
+                    Box(Modifier.fillMaxSize()) {
+                        MovieList(
+                            list = movieListUiState.movieList,
+                            onItemClicked = {},
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        if (movieListUiState.isRefreshing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = 16.dp),
+                            )
+                        }
+                    }
+                }
+
+                is MovieListUiState.Empty -> {
+                    Text(text = stringResource(R.string.not_found))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorContainer(
+    errorText: UiText,
+    onRefreshClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      when (movieListUiState) {
-        is MovieListUiState.LoadFailed -> {
-          ErrorContainer(errorText = movieListUiState.error, onRefreshClicked = onRefreshClicked)
+        Text(
+            text = errorText.asString(),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+        Button(onClick = onRefreshClicked) {
+            Text(text = stringResource(R.string.refresh))
         }
-
-        is MovieListUiState.Loading -> {
-          CircularProgressIndicator(
-            modifier = Modifier.width(64.dp),
-            color = MaterialTheme.colorScheme.tertiary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-          )
-        }
-
-        is MovieListUiState.Success -> {
-          MovieList(list = movieListUiState.movieList, onItemClicked = {}, Modifier.fillMaxSize())
-        }
-
-        is MovieListUiState.Empty -> {
-          Text(text = stringResource(R.string.not_found))
-        }
-      }
     }
-  }
 }
 
-@Composable
-private fun ErrorContainer(errorText: UiText, onRefreshClicked: () -> Unit) {
-  Column(
-    horizontalAlignment = Alignment.CenterHorizontally,
-  ) {
-    Text(
-      text = errorText.asString(),
-      textAlign = TextAlign.Center,
-      modifier = Modifier.padding(bottom = 16.dp),
-    )
-    Button(onClick = onRefreshClicked) {
-      Text(text = stringResource(R.string.refresh))
+
+// Previews
+private fun getDummyMovies(): List<Movie> {
+    return List(10) { index ->
+        Movie(
+            id = index,
+            overview = "This is a overview for movie$index",
+            posterUrl = "https://image.tmdb.org/t/p/w500/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+            releaseDate = "$index/$index/$index",
+            title = "Title $index",
+        )
     }
-  }
 }
 
-@Preview
+@Preview(name = "Loading State")
 @Composable
-private fun MovieListScreenPreview() {
-  val movies = List(10) { index ->
-    Movie(
-      id = index,
-      overview = "This is a overview for movie$index",
-      posterUrl = "https://image.tmdb.org/t/p/w500/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
-      releaseDate = "$index/$index/$index",
-      title = "Title $index",
+private fun MovieListScreenLoadingPreview() {
+    MovieListScreenContent(
+        movieListUiState = MovieListUiState.Loading,
+        snackBarHostState = remember { SnackbarHostState() },
+        onRefreshClicked = {},
+        modifier = Modifier.fillMaxSize(),
     )
-  }
-  MovieListScreen(
-    movieListUiState = MovieListUiState.Success(movies),
-    onRefreshClicked = { },
-    modifier = Modifier.fillMaxSize(),
-  )
+}
+
+@Preview(name = "Empty State")
+@Composable
+private fun MovieListScreenEmptyPreview() {
+    MovieListScreenContent(
+        movieListUiState = MovieListUiState.Empty,
+        snackBarHostState = remember { SnackbarHostState() },
+        onRefreshClicked = {},
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
+@Preview(name = "Success State")
+@Composable
+private fun MovieListScreenSuccessPreview() {
+    MovieListScreenContent(
+        movieListUiState = MovieListUiState.Success(
+            movieList = getDummyMovies(),
+            isRefreshing = false,
+        ),
+        snackBarHostState = remember { SnackbarHostState() },
+        onRefreshClicked = {},
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
+@Preview(name = "Success State (Refreshing)")
+@Composable
+private fun MovieListScreenRefreshingPreview() {
+    MovieListScreenContent(
+        movieListUiState = MovieListUiState.Success(
+            movieList = getDummyMovies(),
+            isRefreshing = true,
+        ),
+        snackBarHostState = remember { SnackbarHostState() },
+        onRefreshClicked = {},
+        modifier = Modifier.fillMaxSize(),
+    )
+}
+
+@Preview(name = "Error State")
+@Composable
+private fun MovieListScreenErrorPreview() {
+    MovieListScreenContent(
+        movieListUiState = MovieListUiState.LoadFailed(UiText.DynamicString("Could not load movies")),
+        snackBarHostState = remember { SnackbarHostState() },
+        onRefreshClicked = {},
+        modifier = Modifier.fillMaxSize(),
+    )
 }

@@ -7,17 +7,22 @@ import jafari.movie.domain.errors.DomainError
 import jafari.movie.domain.errors.Result
 import jafari.movie.domain.models.Movie
 import jafari.movie.domain.usecase.movie.MovieUseCases
+import jafari.movie.presentation.ui.UiText
 import jafari.movie.presentation.ui.asErrorUiText
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed interface MovieListEvent {
+    data class ShowSnackBar(val message: UiText) : MovieListEvent
+}
 
 @HiltViewModel
 class MovieListViewModel
@@ -27,35 +32,24 @@ constructor(private val moviesUseCase: MovieUseCases) : ViewModel() {
     private val _refreshState = MutableStateFlow<Result<Unit, DomainError>>(Result.Loading)
     private var refreshJob: Job? = null
 
+    private val _events = MutableSharedFlow<MovieListEvent>()
+    val events = _events.asSharedFlow()
+
     private val movies: StateFlow<List<Movie>> = moviesUseCase.getMovies()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(StopTimeoutMillis), emptyList())
 
 
     val movieListState: StateFlow<MovieListUiState> =
-        combine(movies, _refreshState) { movies, refreshResult ->
-            val isRefreshing = refreshResult is Result.Loading
+        combine(movies, _refreshState, ::mapToUiState)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(StopTimeoutMillis),
+                initialValue = MovieListUiState.Loading
+            )
 
-            if (movies.isEmpty()) {
-                when (refreshResult) {
-                    is Result.Error -> MovieListUiState.LoadFailed(refreshResult.asErrorUiText())
-                    is Result.Loading -> MovieListUiState.Loading
-                    is Result.Success -> MovieListUiState.Empty
-                }
-            } else {
-                MovieListUiState.Success(
-                    movieList = movies,
-                    isRefreshing = isRefreshing,
-                    error = (refreshResult as? Result.Error)?.asErrorUiText()
-                )
-            }
-        }
-        .onStart { refreshMovieList() }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = MovieListUiState.Loading
-        )
-
+    init {
+        refreshMovieList()
+    }
 
     fun onEvent(event: MovieListAction) {
         when (event) {
@@ -67,8 +61,34 @@ constructor(private val moviesUseCase: MovieUseCases) : ViewModel() {
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
             _refreshState.value = Result.Loading
-            ensureActive()
-            _refreshState.value = moviesUseCase.refreshMovies()
+            val result = moviesUseCase.refreshMovies()
+            _refreshState.value = result
+
+            if (movies.value.isNotEmpty() && result is Result.Error) {
+                _events.emit(MovieListEvent.ShowSnackBar(result.asErrorUiText()))
+            }
         }
+    }
+
+    private fun mapToUiState(
+        movies: List<Movie>,
+        refreshResult: Result<Unit, DomainError>
+    ): MovieListUiState {
+        if (movies.isNotEmpty()) {
+            return MovieListUiState.Success(
+                movieList = movies,
+                isRefreshing = refreshResult is Result.Loading,
+            )
+        }
+
+        return when (refreshResult) {
+            is Result.Error -> MovieListUiState.LoadFailed(refreshResult.asErrorUiText())
+            is Result.Loading -> MovieListUiState.Loading
+            is Result.Success -> MovieListUiState.Empty
+        }
+    }
+
+    companion object {
+        private const val StopTimeoutMillis = 5_000L
     }
 }
