@@ -8,9 +8,9 @@ import jafari.movie.data.repository.movie.datasource.MovieLocalDataSource
 import jafari.movie.data.repository.movie.datasource.MovieRemoteDatasource
 import jafari.movie.di.AppDispatchers.IO
 import jafari.movie.di.Dispatcher
-import jafari.movie.domain.errors.DataError
+import jafari.movie.domain.errors.DomainError
 import jafari.movie.domain.errors.Result
-import jafari.movie.domain.errors.toDataError
+import jafari.movie.domain.errors.toDomainError
 import jafari.movie.domain.models.Movie
 import jafari.movie.domain.repository.MovieRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -34,7 +34,7 @@ class MovieRepositoryImpl
       .map { it.map { it.asExternalModel() } }
       .flowOn(Dispatchers.IO)
 
-  override suspend fun refreshMovies(): Result<Unit, DataError> {
+  override suspend fun refreshMovies(): Result<Unit, DomainError> {
     return withContext(dispatcher) {
         when (val movieResult = movieRemoteDatasource.getPopularMovies()) {
             is NetworkResponse.Success -> {
@@ -44,7 +44,7 @@ class MovieRepositoryImpl
                 Result.Success(Unit)
             }
             is NetworkResponse.Error -> {
-                Result.Error(movieResult.toDataError())
+                Result.Error(movieResult.toDomainError())
             }
         }
     }

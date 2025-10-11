@@ -14,14 +14,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -29,84 +27,70 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import jafari.movie.R
 import jafari.movie.domain.models.Movie
 import jafari.movie.presentation.feature.movielist.component.MovieList
 import jafari.movie.presentation.ui.UiText
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun MovieListScreen(
+  viewModel: MovieListViewModel = hiltViewModel(),
+  modifier: Modifier = Modifier,
+) {
+  val movieListUiState by viewModel.movieListState.collectAsStateWithLifecycle()
+  MovieListScreen(
+    movieListUiState = movieListUiState,
+    onRefreshClicked = { viewModel.onEvent(MovieListAction.RefreshClicked) },
+    modifier = modifier,
+  )
+}
+
+@Composable
+internal fun MovieListScreen(
   movieListUiState: MovieListUiState,
-  uiEvent: SharedFlow<UiEvent>,
-  refreshClicked: () -> Unit,
+  onRefreshClicked: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val snackbarHostState = remember { SnackbarHostState() }
   val context = LocalContext.current
-  LaunchedEffect(key1 = uiEvent) {
-    uiEvent.collectLatest { event ->
-      when (event) {
-        is UiEvent.ShowErrorMessage -> {
-          val errorString = event.error.asString(context)
-          snackbarHostState.showSnackbar(message = errorString)
-        }
-      }
+
+  // Show snackbar for errors that occur during a background refresh
+  val error = movieListUiState.error
+  LaunchedEffect(error) {
+    if (movieListUiState is MovieListUiState.Success && error != null) {
+      val errorString = error.asString(context)
+      snackbarHostState.showSnackbar(message = errorString)
     }
   }
+
   SideEffect {
-    Log.d("LOG", "MovieListScreen: sideEffect")
+    Log.d("LOG", "MovieListScreen: recomposing")
   }
-//  DisposableEffect(lifecycleOwner) {
-//    // Create an observer that triggers our remembered callbacks
-//    // for sending analytics events
-//    val observer = LifecycleEventObserver { _, event ->
-//     if (event == Lifecycle.Event.ON_STOP) {
-//        currentOnStop()
-//        }
-//    }
-//
-//    // Add the observer to the lifecycle
-//    lifecycleOwner.lifecycle.addObserver(observer)
-//
-//    // When the effect leaves the Composition, remove the observer
-//    onDispose {
-//      lifecycleOwner.lifecycle.removeObserver(observer)
-//    }
-//  }
+
   LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
     snackbarHostState.currentSnackbarData?.dismiss()
   }
 
   Scaffold(
-    snackbarHost = {
-      SnackbarHost(hostState = snackbarHostState)
-    },
+    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     modifier = modifier,
   ) { contentPadding ->
     Box(
       modifier = Modifier
         .fillMaxSize()
         .padding(contentPadding),
+      contentAlignment = Alignment.Center
     ) {
       when (movieListUiState) {
         is MovieListUiState.LoadFailed -> {
-          ErrorContainer(movieListUiState.uiText, refreshClicked)
+          ErrorContainer(errorText = movieListUiState.error, onRefreshClicked = onRefreshClicked)
         }
 
         is MovieListUiState.Loading -> {
           CircularProgressIndicator(
-            modifier =
-            Modifier
-              .width(64.dp)
-              .align(Alignment.Center),
+            modifier = Modifier.width(64.dp),
             color = MaterialTheme.colorScheme.tertiary,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
           )
@@ -116,46 +100,33 @@ fun MovieListScreen(
           MovieList(list = movieListUiState.movieList, onItemClicked = {}, Modifier.fillMaxSize())
         }
 
+        is MovieListUiState.Empty -> {
+          Text(text = stringResource(R.string.not_found))
+        }
       }
     }
-
   }
 }
 
 @Composable
-fun ErrorContainer(errorText: UiText, refreshClicked: () -> Unit) {
+private fun ErrorContainer(errorText: UiText, onRefreshClicked: () -> Unit) {
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-
     Text(
       text = errorText.asString(),
       textAlign = TextAlign.Center,
       modifier = Modifier.padding(bottom = 16.dp),
     )
-    Button(onClick = { refreshClicked() }) {
+    Button(onClick = onRefreshClicked) {
       Text(text = stringResource(R.string.refresh))
     }
   }
 }
 
-@Composable
-fun MovieListScreen(
-  viewModel: MovieListViewModel = hiltViewModel(),
-  modifier: Modifier = Modifier,
-) {
-  val movieListUiState by viewModel.movieListState.collectAsStateWithLifecycle()
-  MovieListScreen(
-    movieListUiState,
-    viewModel.uiEventFlow,
-    refreshClicked = { viewModel.onEvent(MovieListAction.RefreshClicked) },
-    modifier,
-  )
-}
-
 @Preview
 @Composable
-fun MovieListScreen() {
+private fun MovieListScreenPreview() {
   val movies = List(10) { index ->
     Movie(
       id = index,
@@ -164,12 +135,10 @@ fun MovieListScreen() {
       releaseDate = "$index/$index/$index",
       title = "Title $index",
     )
-
   }
   MovieListScreen(
-    MovieListUiState.Success(movies),
-    MutableSharedFlow<UiEvent>(),
-    refreshClicked = { },
-    Modifier.fillMaxSize(),
+    movieListUiState = MovieListUiState.Success(movies),
+    onRefreshClicked = { },
+    modifier = Modifier.fillMaxSize(),
   )
 }

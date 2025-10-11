@@ -3,7 +3,7 @@ package jafari.movie.presentation.feature.movielist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jafari.movie.domain.errors.DataError
+import jafari.movie.domain.errors.DomainError
 import jafari.movie.domain.errors.Result
 import jafari.movie.domain.models.Movie
 import jafari.movie.domain.usecase.movie.MovieUseCases
@@ -24,7 +24,7 @@ class MovieListViewModel
 @Inject
 constructor(private val moviesUseCase: MovieUseCases) : ViewModel() {
 
-    private val _refreshState = MutableStateFlow<Result<Unit, DataError>>(Result.Loading)
+    private val _refreshState = MutableStateFlow<Result<Unit, DomainError>>(Result.Loading)
     private var refreshJob: Job? = null
 
     private val movies: StateFlow<List<Movie>> = moviesUseCase.getMovies()
